@@ -37,18 +37,25 @@ def move_towards_higher_halite(ship, map):
 
 
 def highest_value_cell(ship, map):
+    # TODO: Divisible by zero
     max_position = hlt.entity.Position(0, 0)
     max_position_distance = game_map.calculate_distance(max_position, ship.position)
     max_amount = map[max_position].halite_amount
+    max_value = max_amount / max_position_distance
 
     for x in range(map.width):
         for y in range(map.height):
             map_cell = map[hlt.entity.Position(x, y)]
+            if not map_cell.position == ship.position:
+                map_cell_distance = game_map.calculate_distance(map_cell.position, ship.position)
+                map_cell_value = map_cell.halite_amount / map_cell_distance
 
-            if map_cell.halite_amount > max_amount:
-                if game_map.calculate_distance(map_cell.position, ship.position) < max_position_distance:
-                    max_position = map_cell.position
-                    max_amount = map_cell.halite_amount
+                if map_cell_value > max_value:
+                    if map_cell_distance < max_position_distance:
+                        max_position = map_cell.position
+                        max_position_distance = game_map.calculate_distance(max_position, ship.position)
+                        max_amount = map_cell.halite_amount
+                        max_value = max_amount / max_position_distance
 
     return max_position
 
