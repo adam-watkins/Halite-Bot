@@ -3,8 +3,9 @@
 import hlt
 from hlt import constants
 from hlt.positionals import Direction
-import random
 import logging
+from operator import itemgetter
+import random
 
 """ <<<Game Begin>>> """
 game = hlt.Game()
@@ -36,28 +37,22 @@ def move_towards_higher_halite(ship, map):
     return move_choice
 
 
-def highest_value_cell(ship, map):
-    # TODO: Divisible by zero
-    max_position = hlt.entity.Position(0, 0)
-    max_position_distance = game_map.calculate_distance(max_position, ship.position)
-    max_amount = map[max_position].halite_amount
-    max_value = max_amount / max_position_distance
+def move_towards_lower_halite(ship, map):
+    move_choice = Direction.North
+    halite = map[ship.position.directional_offset(Direction.North)].halite_amount
 
-    for x in range(map.width):
-        for y in range(map.height):
-            map_cell = map[hlt.entity.Position(x, y)]
-            if not map_cell.position == ship.position:
-                map_cell_distance = game_map.calculate_distance(map_cell.position, ship.position)
-                map_cell_value = map_cell.halite_amount / map_cell_distance
+    if map[ship.position.directional_offset(Direction.East)].halite_amount < halite:
+        move_choice = Direction.East
+        halite = map[ship.position.directional_offset(Direction.East)].halite_amount
 
-                if map_cell_value > max_value:
-                    if map_cell_distance < max_position_distance:
-                        max_position = map_cell.position
-                        max_position_distance = game_map.calculate_distance(max_position, ship.position)
-                        max_amount = map_cell.halite_amount
-                        max_value = max_amount / max_position_distance
+    if map[ship.position.directional_offset(Direction.West)].halite_amount < halite:
+        move_choice = Direction.West
+        halite = map[ship.position.directional_offset(Direction.West)].halite_amount
 
-    return max_position
+    if map[ship.position.directional_offset(Direction.South)].halite_amount < halite:
+        move_choice = Direction.South
+
+    return move_choice
 
 
 """ <<<Game Loop>>> """
@@ -70,19 +65,30 @@ while True:
     command_queue = []
     next_turn_positions = []
 
-    if len(me.get_ships()) == 0:
-        command_queue.append(me.shipyard.spawn())
+    cell_values = []
+    for x in range(game_map.width):
+        for y in range(game_map.height):
+            cell = game_map[hlt.entity.Position(x, y)]
+
+            if not cell.position == me.shipyard.position:
+                if not cell.position in ship_targets.values():
+                    cell_values.append((
+                        cell.position,
+                        cell.halite_amount / game_map.calculate_distance(cell.position, me.shipyard.position)))
+
+    cell_values.sort(key=itemgetter(1))
 
     for ship in me.get_ships():
         if ship.id not in ship_states:
             ship_states[ship.id] = "NEW"
+            logging.info("Turtle: {} Created".format(ship.id))
 
         move_direction = Direction.Still
-        logging.info("Ship ID: " + str(ship.id) + "State: " + ship_states[ship.id])
 
         if ship_states[ship.id] == "NEW":
-            ship_targets[ship.id] = highest_value_cell(ship, game_map)
+            ship_targets[ship.id] = cell_values.pop()[0]
             ship_states[ship.id] = "TRANSIT"
+            logging.info("Turtle: {} TARGET set to {}".format(ship.id, ship_targets[ship.id]))
 
         if ship_states[ship.id] == "TRANSIT":
             if ship_targets[ship.id] == ship.position:
@@ -105,6 +111,19 @@ while True:
             else:
                 move_direction = move_towards_target(ship, me.shipyard.position)
 
+        # Avoid ships
+        for pos in next_turn_positions:
+            if ship.position.directional_offset(move_direction) == pos:
+                move_direction = move_towards_lower_halite(ship, game_map)
+        for pos in next_turn_positions:
+            if ship.position.directional_offset(move_direction) == pos:
+                move_direction = Direction.invert(move_direction)
+
+        next_turn_positions.append(ship.position.directional_offset(move_direction))
         command_queue.append(ship.move(move_direction))
+
+    if me.shipyard.position not in next_turn_positions:
+        if len(me.get_ships()) < 2 and me.halite_amount >= constants.SHIP_COST and game.turn_number < 200:
+            command_queue.append(me.shipyard.spawn())
 
     game.end_turn(command_queue)
