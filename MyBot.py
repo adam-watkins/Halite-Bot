@@ -105,6 +105,10 @@ while True:
                 else:
                     move_direction = move_towards_higher_halite(ship, game_map)
 
+        turns_left = constants.MAX_TURNS - game.turn_number
+        if turns_left == 20:
+            ship_states[ship.id] = "RETURN"
+
         if ship_states[ship.id] == "RETURN":
             if ship.position == me.shipyard.position:
                 ship_states[ship.id] = "NEW"
