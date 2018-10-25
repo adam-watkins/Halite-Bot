@@ -266,3 +266,50 @@ class GameMap:
         for _ in range(int(read_input())):
             cell_x, cell_y, cell_energy = map(int, read_input().split())
             self[Position(cell_x, cell_y)].halite_amount = cell_energy
+
+    def get_cell_values(self, origin, min_halite):
+        """
+        Gets a list of most valuable cells is DESC or order
+        :param min_halite:
+        :param origin: search from
+        :return: [(position, value)]
+        """
+        cell_values = []
+
+        for x in range(self.width):
+            for y in range(self.height):
+                pos = Position(x, y)
+                if not pos == origin and self[pos].halite_amount >= min_halite:
+                    # (position, value)
+                    cell_values.append(
+                        (pos, self[pos].halite_amount / self.calculate_distance(pos, origin))
+                    )
+
+        return cell_values
+
+    def is_near_min_halite(self, position, minimum_halite):
+        if self[position].halite_amount >= minimum_halite:
+            return True
+        for pos in position.get_surrounding_cardinals():
+            if self[pos].halite_amount >= minimum_halite:
+                return True
+
+        return False
+
+    # TODO: MAKE NICER, choose based on closeness
+    def direction_towards_highest_halite(self, ship):
+        move_choice = Direction.North
+        halite = self[ship.position.directional_offset(Direction.North)].halite_amount
+
+        if self[ship.position.directional_offset(Direction.East)].halite_amount > halite:
+            move_choice = Direction.East
+            halite = self[ship.position.directional_offset(Direction.East)].halite_amount
+
+        if self[ship.position.directional_offset(Direction.West)].halite_amount > halite:
+            move_choice = Direction.West
+            halite = self[ship.position.directional_offset(Direction.West)].halite_amount
+
+        if self[ship.position.directional_offset(Direction.South)].halite_amount > halite:
+            move_choice = Direction.South
+
+        return move_choice

@@ -49,6 +49,7 @@ class Shipyard(Entity):
 class Ship(Entity):
     """
     Ship class to house ship entities
+    States: NEW, TRANSIT, COLLECT, RETURN
     """
     def __init__(self, owner, id, position, halite_amount):
         super().__init__(owner, id, position)
@@ -94,3 +95,9 @@ class Ship(Entity):
                                                        self.id,
                                                        self.position,
                                                        self.halite_amount)
+
+
+class ShipStates:
+    Inbound = 0
+    Outbound = 1
+    Collect = 2
