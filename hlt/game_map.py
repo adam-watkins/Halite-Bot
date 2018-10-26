@@ -1,5 +1,3 @@
-import queue
-
 from . import constants
 from .entity import Entity, Shipyard, Ship, Dropoff
 from .positionals import Direction, Position
@@ -56,7 +54,6 @@ class Player:
         :return: True if and only if the ship exists.
         """
         return ship_id in self._ships
-
 
     @staticmethod
     def _generate():
@@ -275,22 +272,19 @@ class GameMap:
 
     def get_cell_values(self, origin, min_halite):
         """
-        Gets a list of most valuable cells is DESC or order
+        Gets a list of (position, value)
+        Value is based on distance
         :param min_halite:
         :param origin: search from
         :return: [(position, value)]
         """
-        cell_values = []
+        cell_values = {}  # position : value
 
         for x in range(self.width):
             for y in range(self.height):
                 pos = Position(x, y)
                 if not pos == origin and self[pos].halite_amount >= min_halite:
-                    # (position, value)
-                    cell_values.append(
-                        (pos, self[pos].halite_amount / self.calculate_distance(pos, origin))
-                    )
-
+                    cell_values[pos] = self[pos].halite_amount / self.calculate_distance(pos, origin)
         return cell_values
 
     def is_near_min_halite(self, position, minimum_halite):

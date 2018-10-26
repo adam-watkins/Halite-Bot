@@ -14,12 +14,8 @@ MAX_SHIPS = 15
 
 
 def main():
-
     """" <<<Game Begin>>> """
     game = hlt.Game()
-    # At this point "game" variable is populated with initial map data.
-    # This is a good place to do computationally expensive start-up pre-processing.
-    # As soon as you call "ready" function below, the 2 second per turn timer will start.
     game.ready("MyPythonBot")
     logging.info("Successfully created bot! My Player ID is {}.".format(game.my_id))
 
@@ -32,12 +28,27 @@ def main():
         game_map = game.game_map
         ships = me.get_ships()
 
-        next_targets = game_map.get_cell_values(me.shipyard.position, MIN_HALITE)  # [(position, value)]
-        next_targets.sort(key=itemgetter(1))  # Prioritizing targets
+        # Removing Dead ships
+        for ship_id in ship_states:
+            if not me.has_ship(ship_id):
+                del ship_states[ship_id]
+                del ship_targets[ship_id]
 
-        for t in next_targets:
-            if t[0] in ship_targets.values():
-                next_targets.remove(t)
+        values_dict = game_map.get_cell_values(me.shipyard.position, MIN_HALITE)
+
+        # Targets already assigned
+        for pos in values_dict:
+            if pos in ship_targets.values():
+                values_dict.remove(pos)
+
+        # # Targets near other targets
+        # for pos in values_dict:
+        #     for st_pos in ship_targets.values():
+        #         if game_map.calculate_distance(pos, st_pos) <= 2:
+        #             values_dict[pos] *= .75
+
+        next_targets = values_dict.items()
+        # next_targets.sort(key=itemgetter(1))  # Prioritizing targets
 
         # Setting Ship States
         for ship in ships:
@@ -55,15 +66,11 @@ def main():
                 ship_targets[ship.id] = me.shipyard.position
                 ship_states[ship.id] = ShipStates.Inbound
 
-            if ship_states[ship.id] == ShipStates.Collect and not game_map.is_near_min_halite(ship.position, MIN_HALITE):
-                ship_targets[ship.id] = me.shipyard.position
-                ship_states[ship.id] = ShipStates.Inbound
-
             if ship_states[ship.id] == ShipStates.Inbound and ship_targets[ship.id] == ship.position:
                 ship_targets[ship.id] = next_targets.pop()[0]
                 ship_states[ship.id] = ShipStates.Outbound
 
-            if constants.MAX_TURNS - game.turn_number == game_map.height / 2:
+            if constants.MAX_TURNS - game.turn_number == game_map.height / 2:  # TODO improve
                 ship_targets[ship.id] = me.shipyard.position
                 ship_states[ship.id] = ShipStates.Inbound
 
@@ -100,7 +107,7 @@ def main():
                         if d in safe_directions:
                             priority_list.append((d, safe_directions[d]))
                             log_reason = "NAV"
-                        next_targets.sort(key=itemgetter(1))  # Lowest first
+                        priority_list.sort(key=itemgetter(1))  # Lowest first
                     for d in safe_directions:
                         if d not in priority_list:
                             priority_list.append((d, safe_directions[d]))
@@ -115,7 +122,7 @@ def main():
                             if d in safe_directions:
                                 priority_list.append((d, safe_directions[d]))
                                 log_reason = "COL MOV"
-                        next_targets.sort(key=itemgetter(1), reverse=True)  # Highest first
+                        priority_list.sort(key=itemgetter(1), reverse=True)  # Highest first
 
                 # NO MOVES
                 if len(priority_list) == 0:
