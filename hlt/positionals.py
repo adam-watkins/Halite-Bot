@@ -13,6 +13,10 @@ class Direction:
     Still = (0, 0)
 
     @staticmethod
+    def get_all():
+        return [Direction.North, Direction.South, Direction.East, Direction.West, Direction.Still]
+
+    @staticmethod
     def get_all_cardinals():
         """
         Returns all contained items in each cardinal

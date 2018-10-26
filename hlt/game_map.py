@@ -237,6 +237,12 @@ class GameMap:
 
         return Direction.Still
 
+    def unsafe_navigate(self, ship, destination):
+        for direction in self.get_unsafe_moves(ship.position, destination):
+            return direction
+
+        return Direction.Still
+
     @staticmethod
     def _generate():
         """
