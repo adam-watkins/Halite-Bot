@@ -29,17 +29,19 @@ def main():
         ships = me.get_ships()
 
         # Removing Dead ships
+        dead_ships = []
         for ship_id in ship_states:
             if not me.has_ship(ship_id):
-                del ship_states[ship_id]
-                del ship_targets[ship_id]
+                dead_ships.append(ship_id)
+        for ds in dead_ships:
+            del ship_states[ds]
 
-        values_dict = game_map.get_cell_values(me.shipyard.position, MIN_HALITE)
+        position_value_list = game_map.get_cell_values(me.shipyard.position, MIN_HALITE)  # (position, value)
 
         # Targets already assigned
-        for pos in values_dict:
-            if pos in ship_targets.values():
-                values_dict.remove(pos)
+        for p in position_value_list:
+            if p[0] in ship_targets.values():
+                position_value_list.remove(p)
 
         # # Targets near other targets
         # for pos in values_dict:
@@ -47,8 +49,8 @@ def main():
         #         if game_map.calculate_distance(pos, st_pos) <= 2:
         #             values_dict[pos] *= .75
 
-        next_targets = values_dict.items()
-        # next_targets.sort(key=itemgetter(1))  # Prioritizing targets
+        next_targets = position_value_list
+        next_targets.sort(key=itemgetter(1))  # Prioritizing targets
 
         # Setting Ship States
         for ship in ships:

@@ -278,13 +278,13 @@ class GameMap:
         :param origin: search from
         :return: [(position, value)]
         """
-        cell_values = {}  # position : value
+        cell_values = []  # (position, value)
 
         for x in range(self.width):
             for y in range(self.height):
                 pos = Position(x, y)
                 if not pos == origin and self[pos].halite_amount >= min_halite:
-                    cell_values[pos] = self[pos].halite_amount / self.calculate_distance(pos, origin)
+                    cell_values.append((pos, self[pos].halite_amount / self.calculate_distance(pos, origin)))
         return cell_values
 
     def is_near_min_halite(self, position, minimum_halite):
