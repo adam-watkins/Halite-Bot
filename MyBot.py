@@ -43,12 +43,6 @@ def main():
             if p[0] in ship_targets.values():
                 position_value_list.remove(p)
 
-        # # Targets near other targets
-        # for pos in values_dict:
-        #     for st_pos in ship_targets.values():
-        #         if game_map.calculate_distance(pos, st_pos) <= 2:
-        #             values_dict[pos] *= .75
-
         next_targets = position_value_list
         next_targets.sort(key=itemgetter(1))  # Prioritizing targets
 
